@@ -69,38 +69,30 @@ class Twig_NodeVisitor_Escaper implements Twig_NodeVisitorInterface
 
         $expression = $node instanceof Twig_Node_Print ? $node->expr : $node;
 
+        if ($expression instanceof Twig_Node_Expression_Constant) {
+
+            return $node;
+        }
+
         if ($expression instanceof Twig_Node_Expression_Filter) {
-            // don't escape if the primary node of the filter is not a variable
-            if (!$expression->node instanceof Twig_Node_Expression_GetAttr && !$expression->node instanceof Twig_Node_Expression_Name) {
+
+            // don't escape if the last filter in the chain is an "escaper"
+            $filterMap = $env->getFilters();
+            $i = count($expression->filters) - 2;
+            $name = $expression->filters->{$i}['value'];
+            if (isset($filterMap[$name]) && $filterMap[$name]->isEscaper()) {
                 return $node;
             }
-
-            // don't escape if there is already an "escaper" in the filter chain
-            $filterMap = $env->getFilters();
-            for ($i = 0; $i < count($expression->filters); $i += 2) {
-                $name = $expression->filters->{$i}['value'];
-                if (isset($filterMap[$name]) && $filterMap[$name]->isEscaper()) {
-                    return $node;
-                }
-            }
-        } elseif (!$expression instanceof Twig_Node_Expression_GetAttr && !$expression instanceof Twig_Node_Expression_Name) {
-            // don't escape if the node is not a variable
-            return $node;
         }
 
         // escape
         if ($expression instanceof Twig_Node_Expression_Filter) {
-            // escape all variables in filters arguments
-            for ($i = 0; $i < count($expression->filters); $i += 2) {
-                foreach ($expression->filters->{$i + 1} as $j => $n) {
-                    $expression->filters->{$i + 1}->{$j} = $this->escapeNode($n, $env, $type);
-                }
-            }
 
             $filter = $this->getEscaperFilter($type, $expression->getLine());
-            $expression->prependFilter($filter[0], $filter[1]);
+            $expression->appendFilter($filter[0], $filter[1]);
 
             return $node;
+
         } elseif ($node instanceof Twig_Node_Print) {
             return new Twig_Node_Print(
                 new Twig_Node_Expression_Filter($expression, new Twig_Node($this->getEscaperFilter($type, $node->getLine())), $node->getLine())
