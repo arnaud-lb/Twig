@@ -45,7 +45,7 @@ class Twig_Extension_Escaper extends Twig_Extension
     public function getFilters()
     {
         return array(
-            'safe' => new Twig_Filter_Function('twig_safe_filter', array('is_escaper' => true)),
+            'safe' => new Twig_Filter_Function('twig_safe_filter', array('is_safe_callback' => 'twig_safe_filter_is_safe')),
         );
     }
 
@@ -70,3 +70,10 @@ function twig_safe_filter($string)
 {
     return $string;
 }
+
+// |safe is safe for everything
+function twig_safe_filter_is_safe($for, Twig_Node $filterArgs)
+{
+    return true;
+}
+

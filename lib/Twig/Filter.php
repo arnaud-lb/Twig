@@ -24,8 +24,11 @@ abstract class Twig_Filter implements Twig_FilterInterface
     {
         $this->options = array_merge(array(
             'needs_environment' => false,
-            'is_escaper'        => false,
         ), $options);
+
+        if (isset($this->options['is_escaper'])) {
+            throw new InvalidArgumentException("Invalid option is_escaper, use is_safe instead");
+        }
     }
 
     public function needsEnvironment()
@@ -33,8 +36,14 @@ abstract class Twig_Filter implements Twig_FilterInterface
         return $this->options['needs_environment'];
     }
 
-    public function isEscaper()
+    public function isSafe($for, Twig_Node $filterArgs)
     {
-        return $this->options['is_escaper'];
+        if (isset($this->options['is_safe'])) {
+            return in_array($for, $this->options['is_safe']);
+        }
+        if (isset($this->options['is_safe_callback'])) {
+            return call_user_func($this->options['is_safe_callback'], $for, $filterArgs);
+        }
+        return false;
     }
 }
