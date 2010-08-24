@@ -217,10 +217,10 @@ function twig_escape_filter(Twig_Environment $env, $string, $type = 'html')
 
     switch ($type) {
         case 'js':
-            // a function the c-escapes a string, making it suitable to be placed in a JavaScript string
-            return str_replace(array("\\"  , "\n"  , "\r" , "\""  , "'"),
-                                                 array("\\\\", "\\n" , "\\r", "\\\"", "\\'"),
-                                                 $string);
+            // a function that c-escapes a string, making it suitable to be placed in a JavaScript string
+            // escapes \a, \b, \f, \n, \r, \t, \v, ", ', \, /
+            // other control chars from 0x00 through 0x1F are escaped in octal representation
+            return addcslashes($string, "\x00..\x1F\"\\/'");
         case 'html':
         default:
             return htmlspecialchars($string, ENT_QUOTES, $env->getCharset());

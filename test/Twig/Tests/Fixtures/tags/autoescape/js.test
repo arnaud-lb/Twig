@@ -1,0 +1,20 @@
+--TEST--
+"autoescape js" succeeds to escape js
+--TEMPLATE--
+
+{% autoescape on js %}
+<script type="text/javascript">
+
+var foo = "{{ var }}";
+
+</script>
+{% endautoescape %}
+
+--DATA--
+return array('var' => "foo ', \", /, \\, \x00, \x01..\x1F, \x07, \x08, \f, \n, \r, \t and \v; </script>")
+--EXPECT--
+<script type="text/javascript">
+
+var foo = "foo \', \", \/, \\, \000, \001..\037, \a, \b, \f, \n, \r, \t and \v; <\/script>";
+
+</script>

@@ -7,5 +7,5 @@
 --DATA--
 return array('var' => '<br />"')
 --EXPECT--
-<br />\"
+<br \/>\"
 &lt;br /&gt;&quot;
