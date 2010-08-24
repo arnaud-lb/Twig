@@ -218,9 +218,7 @@ function twig_constant_filter($constant)
  */
 function twig_escape_filter(Twig_Environment $env, $string, $type = 'html')
 {
-    if (!is_string($string) && !(is_object($string) && method_exists($string, '__toString'))) {
-        return $string;
-    }
+    $string = (string) $string;
 
     switch ($type) {
         case 'js':
