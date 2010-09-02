@@ -27,7 +27,8 @@ abstract class Twig_Filter implements Twig_FilterInterface
         ), $options);
 
         if (isset($this->options['is_escaper'])) {
-            throw new InvalidArgumentException("Invalid option is_escaper, use is_safe instead");
+            $this->options['is_safe'] = array('html');
+            unset($this->options['is_escaper']);
         }
     }
 
