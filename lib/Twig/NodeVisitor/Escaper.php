@@ -96,17 +96,31 @@ class Twig_NodeVisitor_Escaper implements Twig_NodeVisitorInterface
         $name = $filter->getNode('filter')->getAttribute('value');
 
         if (isset($filterMap[$name])) {
-            $type = $filterMap[$name]->getPreEscape();
-            if (null === $type) {
+
+            $preEscapeType = $filterMap[$name]->getPreEscape();
+
+            /* verify that the user is not applying an unsafe
+             * filter over a safe value */
+
+            $inputSafe = $this->getSafe($filter->getNode('node'), $env);
+            $outputSafe = $filterMap[$name]->getSafe($filter->getNode('arguments'));
+
+            if (!empty($inputSafe) && empty($outputSafe) && empty($preEscapeType)) {
+                throw new Twig_Error_Syntax(sprintf('The non-escaping \'%s\' filter can not be applied over an escaped value. The filter must be applied before escaping', $name));
+            }
+
+            /* Handle pre-escaping */
+
+            if (null === $preEscapeType) {
                 return $filter;
             }
 
             $node = $filter->getNode('node');
-            if ($this->isSafeFor($type, $node, $env)) {
+            if ($this->isSafeFor($preEscapeType, $node, $env)) {
                 return $filter;
             }
 
-            $filter->setNode('node', $this->getEscaperFilter($type, $node));
+            $filter->setNode('node', $this->getEscaperFilter($preEscapeType, $node));
 
             return $filter;
         }
@@ -114,7 +128,7 @@ class Twig_NodeVisitor_Escaper implements Twig_NodeVisitorInterface
         return $filter;
     }
 
-    protected function isSafeFor($type, Twig_NodeInterface $expression, $env)
+    protected function getSafe(Twig_NodeInterface $expression, $env)
     {
         $safe = $this->safeAnalysis->getSafe($expression);
 
@@ -125,6 +139,13 @@ class Twig_NodeVisitor_Escaper implements Twig_NodeVisitorInterface
             $this->traverser->traverse($expression);
             $safe = $this->safeAnalysis->getSafe($expression);
         }
+
+        return $safe;
+    }
+
+    protected function isSafeFor($type, Twig_NodeInterface $expression, $env)
+    {
+        $safe = $this->getSafe($expression, $env);
 
         return in_array($type, $safe) || in_array('all', $safe);
     }
